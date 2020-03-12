@@ -63,7 +63,7 @@ proto.SizeOfFrameLengthAndFlags)
 			Content: bytes,
 			Flags:   uint8(flags_),
 		}
-		if clientMessage.StartFrame == nil {
+		if clientMessage.StartFrame() == nil  {
 			clientMessage = proto.CreateForDecode(frame)
 		} else {
 			clientMessage.Add(frame)

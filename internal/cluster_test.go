@@ -39,7 +39,7 @@ func Test_getPossibleAddresses(t *testing.T) {
 	}
 	for _, address := range configAddresses {
 		ip, port := iputil.GetIPAndPort(address)
-		if _, found := addressesInMap[*proto.NewAddressWithParameters(ip, port)]; !found {
+		if _, found := addressesInMap[*proto.NewAddressWithParameters(ip, int32(port))]; !found {
 			t.Fatal("createAddressFromString failed")
 		}
 	}

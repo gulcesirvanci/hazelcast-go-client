@@ -15,16 +15,14 @@
 package internal
 
 import (
-	"sync"
 	"sync/atomic"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
-	"github.com/hazelcast/hazelcast-go-client/core/logger"
 	"github.com/hazelcast/hazelcast-go-client/internal/proto"
 	"github.com/hazelcast/hazelcast-go-client/security"
 )
 
-const (
+/*const (
 	authenticated = iota
 	credentialsFailed
 	serializationVersionMismatch
@@ -58,7 +56,7 @@ type connectionManager interface {
 	NextConnectionID() int64
 	IsAlive() bool
 	shutdown()
-}
+}*/
 
 func (cm *connectionManagerImpl) addListener(listener connectionListener) {
 	cm.listenerMutex.Lock()
@@ -117,14 +115,14 @@ func (cm *connectionManagerImpl) getOrTriggerConnect(address core.Address) (*Con
 	go cm.getOrCreateConnectionInternal(address, false)
 	return nil, core.NewHazelcastIOError("No available connection to address "+address.String(), nil)
 }
-
-func (cm *connectionManagerImpl) getOrConnect(address core.Address, asOwner bool) (*Connection, error) {
-	connection := cm.getConnection(address, asOwner)
-	if connection != nil {
-		return connection, nil
-	}
-	return cm.getOrCreateConnectionInternal(address, asOwner)
-}
+//
+//func (cm *connectionManagerImpl) getOrConnect(address core.Address, asOwner bool) (*Connection, error) {
+//	connection := cm.getConnection(address, asOwner)
+//	if connection != nil {
+//		return connection, nil
+//	}
+//	return cm.getOrCreateConnectionInternal(address, asOwner)
+//}
 
 func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
 	ownerConnectionAddress := cm.client.ClusterService.getOwnerConnectionAddress()
@@ -134,11 +132,11 @@ func (cm *connectionManagerImpl) getOwnerConnection() *Connection {
 	return cm.getActiveConnection(ownerConnectionAddress)
 }
 
-func (cm *connectionManagerImpl) IsAlive() bool {
+/*func (cm *connectionManagerImpl) IsAlive() bool {
 	return cm.isAlive.Load().(bool)
-}
+}*/
 
-func (cm *connectionManagerImpl) shutdown() {
+/*func (cm *connectionManagerImpl) shutdown() {
 	if cm.isAlive.Load() == false {
 		return
 	}
@@ -148,11 +146,11 @@ func (cm *connectionManagerImpl) shutdown() {
 
 		con.close(core.NewHazelcastClientNotActiveError("client is shutting down", nil))
 	}
-}
+}*/
 
 //internal definitions and methods called inside connection manager process
 
-type connectionManagerImpl struct {
+/*type connectionManagerImpl struct {
 	client              *HazelcastClient
 	connectionsMutex    sync.RWMutex
 	connections         map[string]*Connection
@@ -163,7 +161,7 @@ type connectionManagerImpl struct {
 	isAlive             atomic.Value
 	credentials         security.Credentials
 	logger              logger.Logger
-}
+}*/
 
 func newConnectionManager(client *HazelcastClient, addressTranslator AddressTranslator) connectionManager {
 	cm := connectionManagerImpl{

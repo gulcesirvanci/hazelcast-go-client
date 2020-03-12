@@ -234,9 +234,8 @@ func (c *Connection) close(err error) {
 func (c *Connection) String() string {
 	return fmt.Sprintf("ClientConnection{"+
 		"isAlive=%t"+
-		//", connectionID=%d"+
+		", connectionID=%d"+
 		", endpoint=%s"+
-		", lastReadTime=%s"+
 		", lastWriteTime=%s"+
 		", closedTime=%s"+
 		", connected server version=%s", c.isAlive(), c.connectionID,
