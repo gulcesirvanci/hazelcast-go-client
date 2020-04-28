@@ -17,11 +17,11 @@ package internal
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 	"reflect"
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 	"github.com/stretchr/testify/require"
 )
 

@@ -16,12 +16,12 @@ package internal
 
 import (
 	"fmt"
-	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
 	"reflect"
 	"strconv"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/internal/classdef"
 )
 
 // Service serializes user objects to Data and back to Object.
@@ -232,69 +232,38 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 	classDefinitions []serialization.ClassDefinition) {
 	var factoryMap = map[int32]map[int32]serialization.ClassDefinition{}
 
-
 	for _, cd := range classDefinitions {
 		factoryID := cd.FactoryID()
 		classID := cd.ClassID()
 
 		factoryMap[factoryID] = map[int32]serialization.ClassDefinition{ classID : cd}
-
-		//append( {factoryID : {classID : cd}}, factoryMap)
-
-		//factoryMap = append(factoryMap{factoryID : {classID : cd}} , cd )
-
 	}
 
-
 	for _, cd := range classDefinitions {
-
 		fieldNames := cd.FieldNames()
 
 		for _, fieldName := range fieldNames {
 			fieldDef := cd.Field(fieldName)
 			if fieldDef.Type() == classdef.TypePortable || fieldDef.Type() == classdef.TypePortableArray {
-				factoryId := fieldDef.FactoryID()
-				classId := fieldDef.ClassID()
+				factoryID := fieldDef.FactoryID()
+				classID := fieldDef.ClassID()
 
-				classDefMap := factoryMap[factoryId]
+				classDefMap := factoryMap[factoryID]
 				if classDefMap != nil {
-					nestedCD := classDefMap[classId]
+					nestedCD := classDefMap[classID]
 					if nestedCD != nil {
-
 						portableSerializer.portableContext.RegisterClassDefinition(nestedCD)
 					}
 				}
-
-
 			}
 		}
 	}
 
 	for _, cd := range classDefinitions {
-
 		portableSerializer.portableContext.RegisterClassDefinition(cd)
 	}
 
 }
-
-
-/*func (s *Service) mregisterClassDefinitions(portableSerializer *PortableSerializer,
-	classDefinitions []serialization.ClassDefinition) {
-
-	for _, cd := range classDefinitions {
-		factoryId := cd.FactoryID()
-		classId := cd.ClassID()
-		classDefMap, _ := portableSerializer.createNewPortableInstance(factoryId,classId)
-		if classDefMap.ClassID() == classId {
-			print("Duplicate registration found for factory-id : " ,  factoryId ,", class-id " ,classId)
-		}
-
-	}
-
-	for _, cd := range classDefinitions {
-		portableSerializer.portableContext.RegisterClassDefinition(cd)
-	}
-}*/
 
 func (s *Service) registerGlobalSerializer(globalSerializer serialization.Serializer) {
 	if globalSerializer != nil {
