@@ -424,50 +424,54 @@ func TestClassesWithSameClassIDInDifferentFactories(t *testing.T) {
 
 	s, _ := NewService(config)
 
-
 	object := newMyPortableWithObj1("test")
 	data, _ := s.ToData(object)
-	s.ToObject(data)
+	ret, _ := s.ToObject(data)
 
-	if !reflect.DeepEqual(object, &data) {
+	if !reflect.DeepEqual(object, ret) {
 		t.Error("same classID and different factoryID failed")
 	}
 
 	object2 := newMyPortableWithObj2(1)
 	data2, _ := s.ToData(object2)
-	s.ToData(data2)
+	ret2 , _ := s.ToObject(data2)
 
-	//assert.Equal(t,object, data,)
-	//assert.Equal(t,object2, data2,)
+	/*assert.Equal(t,object, ret,)
+	assert.Equal(t,object2, ret2,)*/
 
-	if !reflect.DeepEqual(object2, &data2) {
+	if !reflect.DeepEqual(object2, ret2) {
 		t.Error("same classID and different factoryID failed")
 	}
 
 }
 
 func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
-	s, _ := NewService(serialization.NewConfig())
-	// s.serializationConfig.AddPortableFactory(MyPortableFactoryID1,NewMyPortableFactory1())
-	// s.serializationConfig.AddPortableFactory(MyPortableFactoryID2,NewMyPortableFactory2())
+	config := serialization.NewConfig()
+	config.AddPortableFactory(MyPortableFactoryID1,NewMyPortableFactory1())
+	config.AddPortableFactory(MyPortableFactoryID2,NewMyPortableFactory2())
 
 	builder1 := classdef.NewClassDefinitionBuilder(1, 1, 0)
 	builder1.AddUTFField("stringField")
 	cd1 := builder1.Build()
-	s.serializationConfig.AddClassDefinition(cd1)
 
 	builder2 := classdef.NewClassDefinitionBuilder(1, 1, 0)
 	builder2.AddInt32Field("intField")
 	cd2 := builder2.Build()
-	s.serializationConfig.AddClassDefinition(cd2)
+
+	config.AddClassDefinition(cd1)
+	config.AddClassDefinition(cd2)
+
+	s, _ := NewService(config)
 
 	object := newMyPortableWithObj1("test")
 	data, _ := s.ToData(object)
+	ret, _ := s.ToObject(data)
 
 	object2 := newMyPortableWithObj2(1)
 	data2, _ := s.ToData(object2)
+	ret2, _ := s.ToObject(data2)
 
-	if !reflect.DeepEqual(object, data) || !reflect.DeepEqual(object2, data2) {
+	if !reflect.DeepEqual(object, ret) || !reflect.DeepEqual(object2, ret2) {
 		t.Error("same classID and same factoryID failed")
 	}
 
