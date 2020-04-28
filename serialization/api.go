@@ -472,6 +472,9 @@ type PortableReader interface {
 
 // ClassDefinition defines a class schema for Portable structs.
 type ClassDefinition interface {
+	// FieldNames returns []string
+	FieldNames() []string
+
 	// FactoryID returns factory ID of struct.
 	FactoryID() int32
 

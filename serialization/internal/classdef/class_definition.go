@@ -14,7 +14,9 @@
 
 package classdef
 
-import "github.com/hazelcast/hazelcast-go-client/serialization"
+import (
+	"github.com/hazelcast/hazelcast-go-client/serialization"
+)
 
 type ClassDefinitionImpl struct {
 	factoryID int32
@@ -41,6 +43,15 @@ func (cd *ClassDefinitionImpl) Version() int32 {
 
 func (cd *ClassDefinitionImpl) Field(name string) serialization.FieldDefinition {
 	return cd.fields[name]
+}
+
+func (cd *ClassDefinitionImpl) FieldNames() []string {
+	var names []string
+
+	for k :=range cd.fields{
+		names = append(names, k)
+	}
+	return names
 }
 
 func (cd *ClassDefinitionImpl) FieldCount() int {
