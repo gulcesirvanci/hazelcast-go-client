@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
@@ -445,4 +446,149 @@ func TestPortableSerializer_NestedPortableVersion(t *testing.T) {
 		t.Error("nested portable version is wrong")
 	}
 
+}
+
+type NamedPortable struct {
+	name string
+	k int32
+}
+
+func NewNamedPortable(s string, k int32) *NamedPortable {
+	return &NamedPortable{s,k}
+}
+
+func (n *NamedPortable) ClassID() int32 {
+	return 6
+}
+
+func (n *NamedPortable) FactoryID() int32 {
+	return 1
+}
+
+func (n *NamedPortable) ReadPortable(reader serialization.PortableReader) (err error) {
+	n.name = reader.ReadUTF("name")
+	n.k = reader.ReadInt32("myint")
+	return
+}
+
+func (n *NamedPortable) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteUTF("name", n.name)
+	writer.WriteInt32("myint",n.k)
+	return
+}
+
+type RawDataPortable struct {
+	l int64
+	c []int16
+	p *NamedPortable
+	k int32
+	s string
+	sds []byte
+}
+
+func (r *RawDataPortable) ClassID() int32 {
+	return 4
+}
+
+func (r *RawDataPortable) FactoryID() int32 {
+	return 1
+}
+
+func (r *RawDataPortable) ReadPortable(reader serialization.PortableReader) (err error) {
+	r.l = reader.ReadInt64("l")
+	r.c = reader.ReadInt16Array("c")
+	obj := reader.ReadPortable("p")
+	r.p = obj.(*NamedPortable)
+	//input := reader.ReadPortable()
+	r.k = reader.ReadInt32("k")
+	r.s = reader.ReadUTF("s")
+	r.sds = reader.ReadByteArray("sds")
+
+	return
+}
+
+func (r *RawDataPortable) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteInt64("l", r.l)
+	writer.WriteInt16Array("c", r.c)
+	writer.WritePortable("p",r.p)
+
+	writer.WriteInt32("k",r.k)
+	writer.WriteUTF("s",r.s)
+	writer.WriteByteArray("sds",r.sds)
+	return
+}
+
+func NewRawDataPortable(l int64, c []int16,p *NamedPortable,k int32,s string,sds []byte) *RawDataPortable {
+	return &RawDataPortable{l,c,p,k,s,sds}
+}
+
+type portableFactoryC struct {
+}
+
+func (p portableFactoryC) Create(classID int32) (instance serialization.Portable) {
+	if classID == 4 {
+		return &RawDataPortable{}
+	}else if classID == 6 {
+		return &NamedPortable{}
+	}
+	return
+}
+
+func TestClassDefinitionConfig(t *testing.T){
+	var portableVersion int32 = 1
+
+	sc := serialization.NewConfig()
+	sc.AddPortableFactory(1,&portableFactoryC{})
+	sc.SetPortableVersion(portableVersion)
+
+	builder1 := classdef.NewClassDefinitionBuilder(1, 4, portableVersion)
+	builder1.AddInt64Field("l")
+	builder1.AddInt16Field("c")
+
+	createNamedPortableClassDefinition := classdef.NewClassDefinitionBuilder(1,6,portableVersion)
+	createNamedPortableClassDefinition.AddUTFField("name")
+	createNamedPortableClassDefinition.AddInt32Field("myint")
+	cd3 := createNamedPortableClassDefinition.Build()
+
+	builder1.AddPortableField("p", cd3)
+
+	cd1 := builder1.Build()
+
+	builder2 := classdef.NewClassDefinitionBuilder(1, 6, portableVersion)
+	builder2.AddUTFField("name")
+	builder2.AddInt32Field("myint")
+	cd2 := builder2.Build()
+	sc.AddClassDefinition(cd2)
+	sc.AddClassDefinition(cd1)
+
+	ss, _ := NewService(sc)
+
+	p := NewNamedPortable("named portable",34567)
+	c := []int16{'t','e','s','t',' ','c','h','a','r','s'}
+	bytArr := []byte{116, 101, 115, 116, 32, 98, 121, 116, 101, 115}
+
+	rawP := NewRawDataPortable(makeTimestamp(),c, p ,9876, "Testing raw portable",bytArr)
+
+	//builder3 := classdef.NewClassDefinitionBuilder(1, 4, portableVersion)
+
+	/*builder3.AddInt32Field("k")
+	builder3.AddUTFField("s")
+	builder3.AddByteArrayField("sds")
+
+	s2, _ := NewService(sc)
+
+	data, _ := s2.ToData(rawP)*/
+
+	data, _ := ss.ToData(rawP)
+
+	ret, _ := ss.ToObject(data)
+
+	if !reflect.DeepEqual(rawP, ret) {
+		t.Error("wrong alert")
+	}
+
+}
+
+func makeTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }

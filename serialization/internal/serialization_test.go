@@ -301,7 +301,7 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 const (
 	MyPortableID1 = 1
 	MyPortableFactoryID1 = 1
-	MyPortableID2  = 2
+	MyPortableID2  = 1
 	MyPortableFactoryID2 = 2
 )
 
@@ -335,9 +335,6 @@ func newMyPortableWithObj1(str string) *MyPortable1 {
 	return &MyPortable1{stringField:str}
 }
 
-/*func (*MyPortable1) ID() int32 {
-	return 1
-}*/
 
 type MyPortable2 struct {
 	intField int32
@@ -369,18 +366,12 @@ func newMyPortableWithObj2(num int32) *MyPortable2 {
 	return &MyPortable2{intField:num}
 }
 
-//Factories
-
 type MyPortableFactory1 struct {
 }
 
 func NewMyPortableFactory1() *MyPortableFactory1 {
 	return &MyPortableFactory1{}
 }
-
-/*func (*MyPortableFactory1) ID() int32 {
-	return 1
-}*/
 
 func (*MyPortableFactory1) Create(classID int32) serialization.Portable {
 
@@ -399,7 +390,7 @@ func NewMyPortableFactory2() *MyPortableFactory2 {
 
 func (*MyPortableFactory2) Create(classID int32) serialization.Portable {
 
-	if classID == 2 {
+	if classID == 1 {
 		return newMyPortable2()
 	}
 	return nil
@@ -436,9 +427,6 @@ func TestClassesWithSameClassIDInDifferentFactories(t *testing.T) {
 	data2, _ := s.ToData(object2)
 	ret2 , _ := s.ToObject(data2)
 
-	/*assert.Equal(t,object, ret,)
-	assert.Equal(t,object2, ret2,)*/
-
 	if !reflect.DeepEqual(object2, ret2) {
 		t.Error("same classID and different factoryID failed")
 	}
@@ -467,11 +455,15 @@ func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
 	data, _ := s.ToData(object)
 	ret, _ := s.ToObject(data)
 
+	if !reflect.DeepEqual(object, ret) {
+		t.Error("same classID and same factoryID failed")
+	}
+
 	object2 := newMyPortableWithObj2(1)
 	data2, _ := s.ToData(object2)
 	ret2, _ := s.ToObject(data2)
 
-	if !reflect.DeepEqual(object, ret) || !reflect.DeepEqual(object2, ret2) {
+	if !reflect.DeepEqual(object2, ret2) {
 		t.Error("same classID and same factoryID failed")
 	}
 
