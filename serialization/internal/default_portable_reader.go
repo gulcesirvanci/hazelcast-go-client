@@ -479,6 +479,13 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]serializ
 	return portables, nil
 }
 
+func (pr *DefaultPortableReader)RawDataInput() {
+
+	pos := pr.offset + int32(pr.classDefinition.FieldCount()*bufutil.Int32SizeInBytes)
+	pr.input.(*ObjectDataInput).ReadInt32WithPosition(pos)
+	pr.input.SetPosition(pos)
+}
+
 func (pr *DefaultPortableReader) End() {
 	pr.input.SetPosition(pr.finalPos)
 }

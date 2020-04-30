@@ -182,6 +182,13 @@ func (pw *DefaultPortableWriter) WritePortableArray(fieldName string, portableAr
 	return nil
 }
 
+func (pw *DefaultPortableWriter)RawDataOutput(fieldName string) {
+	pos := pw.output.Position()
+	index := pw.classDefinition.FieldCount()
+	pw.setPosition(fieldName, pw.offset + int32(index * bufutil.Int32SizeInBytes))
+	pw.output.WriteInt32(pos)
+}
+
 func (pw *DefaultPortableWriter) setPosition(fieldName string, fieldType int32) serialization.FieldDefinition {
 	field := pw.classDefinition.Field(fieldName)
 	pos := pw.output.Position()
