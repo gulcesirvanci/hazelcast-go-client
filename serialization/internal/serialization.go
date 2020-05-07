@@ -200,9 +200,7 @@ func (s *Service) registerDefaultSerializers() error {
 	portableSerializer := NewPortableSerializer(s, s.serializationConfig.PortableFactories(),
 		s.serializationConfig.PortableVersion())
 
-	var factoryMap = make(map[int32]map[int32]serialization.ClassDefinition)
-
-	s.registerClassDefinitions(portableSerializer, s.serializationConfig.ClassDefinitions(),factoryMap)
+	s.registerClassDefinitions(portableSerializer, s.serializationConfig.ClassDefinitions())
 	s.registerSerializer(portableSerializer)
 	s.nameToID["!portable"] = ConstantTypePortable
 	return nil
@@ -223,7 +221,7 @@ func (s *Service) registerSerializer(serializer serialization.Serializer) error 
 	return nil
 }
 
-/*func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
+func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
 	classDefinitions []serialization.ClassDefinition) {
 
 	var factoryMap = make(map[int32]map[int32]serialization.ClassDefinition)
@@ -238,68 +236,18 @@ func (s *Service) registerSerializer(serializer serialization.Serializer) error 
 			inner[classID] = cd
 			factoryMap[factoryID] = inner
 		}else {
-			//deepin, ok := inner[classID]
-			//inner = make(map[int32]serialization.ClassDefinition)
 			factoryMap[factoryID][classID] = cd
 		}
-
 	}
-
 
 	for _, cd := range classDefinitions {
 		s.registerClassDefinition(portableSerializer,cd,factoryMap)
 	}
-}*/
-
-func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
-	classDefinitions []serialization.ClassDefinition, factoryMap map[int32]map[int32]serialization.ClassDefinition) {
-
-	for _, cd := range classDefinitions {
-		factoryID := cd.FactoryID()
-		classID := cd.ClassID()
-
-		inner, ok := factoryMap[factoryID]
-		if !ok {
-			inner = make(map[int32]serialization.ClassDefinition)
-			inner[classID] = cd
-			factoryMap[factoryID] = inner
-		}else {
-			//deepin, ok := inner[classID]
-			//inner = make(map[int32]serialization.ClassDefinition)
-			factoryMap[factoryID][classID] = cd
-		}
-
-	}
-
-	for _, cd := range classDefinitions {
-
-		fieldNames := cd.FieldNames()
-
-		for _, fieldName := range fieldNames {
-			fieldDef := cd.Field(fieldName)
-			if fieldDef.Type() == classdef.TypePortable || fieldDef.Type() == classdef.TypePortableArray {
-				factoryID := fieldDef.FactoryID()
-				classID := fieldDef.ClassID()
-
-				classDefMap := factoryMap[factoryID]
-				if classDefMap != nil {
-					nestedCD := classDefMap[classID]
-					if nestedCD != nil {
-						//nesCD := []serialization.ClassDefinition{nestedCD}
-						//s.registerClassDefinitions(portableSerializer,nesCD,factoryMap)
-						portableSerializer.portableContext.RegisterClassDefinition(nestedCD)
-						continue
-					}
-				}
-			}
-		}
-		portableSerializer.portableContext.RegisterClassDefinition(cd)
-	}
-
 }
 
-/*func (s *Service) registerClassDefinition(portableSerializer *PortableSerializer,
-	cd serialization.ClassDefinition, factoryMap map[int32]map[int32]serialization.ClassDefinition) {
+func (s *Service) registerClassDefinition(portableSerializer *PortableSerializer,
+	cd serialization.ClassDefinition,factoryMap map[int32]map[int32]serialization.ClassDefinition){
+
 	fieldNames := cd.FieldNames()
 
 	for _, fieldName := range fieldNames {
@@ -320,8 +268,7 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 		}
 	}
 	portableSerializer.portableContext.RegisterClassDefinition(cd)
-
-}*/
+}
 
 func (s *Service) registerGlobalSerializer(globalSerializer serialization.Serializer) {
 	if globalSerializer != nil {
