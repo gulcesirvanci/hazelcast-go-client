@@ -376,6 +376,8 @@ type PortableWriter interface {
 
 	// WritePortableArray writes a []Portable with fieldName.
 	WritePortableArray(fieldName string, value []Portable) error
+
+	RawDataOutput() PositionalDataOutput
 }
 
 // PortableReader provides a mean of reading portable fields from a binary in form of go primitives
@@ -468,6 +470,8 @@ type PortableReader interface {
 	// ReadPortableArray takes fieldName name of the field and returns the []Portable value read.
 	// It returns nil if an error is set previously.
 	ReadPortableArray(fieldName string) []Portable
+
+	RawDataInput() DataInput
 }
 
 // ClassDefinition defines a class schema for Portable structs.

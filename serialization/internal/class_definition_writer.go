@@ -25,6 +25,11 @@ type ClassDefinitionWriter struct {
 	classDefinitionBuilder *classdef.ClassDefinitionBuilder
 }
 
+func (cdw *ClassDefinitionWriter) RawDataOutput() serialization.PositionalDataOutput {
+	var empty serialization.PositionalDataOutput
+	return empty
+}
+
 func NewClassDefinitionWriter(portableContext *PortableContext, factoryID int32, classID int32,
 	version int32) *ClassDefinitionWriter {
 	return &ClassDefinitionWriter{portableContext,

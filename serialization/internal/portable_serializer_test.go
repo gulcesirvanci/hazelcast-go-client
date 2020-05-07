@@ -499,11 +499,10 @@ func (r *RawDataPortable) ReadPortable(reader serialization.PortableReader) (err
 	r.c = reader.ReadInt16Array("c")
 	obj := reader.ReadPortable("p")
 	r.p = obj.(*NamedPortable)
-	//input := reader.ReadPortable()
-	r.k = reader.ReadInt32("k")
-	r.s = reader.ReadUTF("s")
-	r.sds = reader.ReadByteArray("sds")
-
+	input := reader.RawDataInput()
+	r.k = input.ReadInt32()
+	r.s = input.ReadUTF()
+	r.sds = input.ReadByteArray()
 	return
 }
 
@@ -511,15 +510,15 @@ func (r *RawDataPortable) WritePortable(writer serialization.PortableWriter) (er
 	writer.WriteInt64("l", r.l)
 	writer.WriteInt16Array("c", r.c)
 	writer.WritePortable("p",r.p)
-
-	writer.WriteInt32("k",r.k)
-	writer.WriteUTF("s",r.s)
-	writer.WriteByteArray("sds",r.sds)
+	output := writer.RawDataOutput()
+	output.WriteInt32(r.k)
+	output.WriteUTF(r.s)
+	output.WriteByteArray(r.sds)
 	return
 }
 
-func NewRawDataPortable(l int64, c []int16,p *NamedPortable,k int32,s string,sds []byte) *RawDataPortable {
-	return &RawDataPortable{l,c,p,k,s,sds}
+func NewRawDataPortable(l int64, c []int16,p *NamedPortable,k int32,s string, bytArr []byte) *RawDataPortable {
+	return &RawDataPortable{l,c,p,k,s, bytArr}
 }
 
 type portableFactoryC struct {
@@ -543,7 +542,7 @@ func TestClassDefinitionConfig(t *testing.T){
 
 	builder1 := classdef.NewClassDefinitionBuilder(1, 4, portableVersion)
 	builder1.AddInt64Field("l")
-	builder1.AddInt16Field("c")
+	builder1.AddInt16ArrayField("c")
 
 	createNamedPortableClassDefinition := classdef.NewClassDefinitionBuilder(1,6,portableVersion)
 	createNamedPortableClassDefinition.AddUTFField("name")
@@ -565,22 +564,10 @@ func TestClassDefinitionConfig(t *testing.T){
 
 	p := NewNamedPortable("named portable",34567)
 	c := []int16{'t','e','s','t',' ','c','h','a','r','s'}
-	bytArr := []byte{116, 101, 115, 116, 32, 98, 121, 116, 101, 115}
-
-	rawP := NewRawDataPortable(makeTimestamp(),c, p ,9876, "Testing raw portable",bytArr)
-
-	//builder3 := classdef.NewClassDefinitionBuilder(1, 4, portableVersion)
-
-	/*builder3.AddInt32Field("k")
-	builder3.AddUTFField("s")
-	builder3.AddByteArrayField("sds")
-
-	s2, _ := NewService(sc)
-
-	data, _ := s2.ToData(rawP)*/
+	sds := []byte{116, 101, 115, 116, 32, 98, 121, 116, 101, 115}
+	rawP := NewRawDataPortable(makeTimestamp(),c, p ,9876, "Testing raw portable", sds)
 
 	data, _ := ss.ToData(rawP)
-
 	ret, _ := ss.ToObject(data)
 
 	if !reflect.DeepEqual(rawP, ret) {
