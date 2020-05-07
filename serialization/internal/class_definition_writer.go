@@ -142,6 +142,11 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 	return nil
 }
 
+func (cdw *ClassDefinitionWriter) WriteRawDataOutput() serialization.PositionalDataOutput {
+	var empty serialization.PositionalDataOutput
+	return empty
+}
+
 func (cdw *ClassDefinitionWriter) registerAndGet() (serialization.ClassDefinition, error) {
 	cd := cdw.classDefinitionBuilder.Build()
 	return cdw.portableContext.RegisterClassDefinition(cd)
