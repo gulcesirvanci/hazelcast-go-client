@@ -565,7 +565,8 @@ func TestClassDefinitionConfig(t *testing.T){
 	p := NewNamedPortable("named portable",34567)
 	c := []int16{'t','e','s','t',' ','c','h','a','r','s'}
 	sds := []byte{116, 101, 115, 116, 32, 98, 121, 116, 101, 115}
-	rawP := NewRawDataPortable(makeTimestamp(),c, p ,9876, "Testing raw portable", sds)
+	l := time.Now().UnixNano() / int64(time.Millisecond)
+	rawP := NewRawDataPortable( l, c, p,9876, "Testing raw portable", sds)
 
 	data, _ := ss.ToData(rawP)
 	ret, _ := ss.ToObject(data)
@@ -574,8 +575,4 @@ func TestClassDefinitionConfig(t *testing.T){
 		t.Error("wrong alert")
 	}
 
-}
-
-func makeTimestamp() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
 }
