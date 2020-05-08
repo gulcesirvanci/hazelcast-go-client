@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"github.com/hazelcast/hazelcast-go-client/serialization/classdef"
 	"github.com/stretchr/testify/require"
 )
 
@@ -295,4 +296,174 @@ func TestUndefinedDataDeserialization(t *testing.T) {
 	data := &Data{dataOutput.buffer}
 	_, err := s.ToObject(data)
 	require.Errorf(t, err, "err should not be nil")
+}
+
+const (
+	MyPortableID1 = 1
+	MyPortableFactoryID1 = 1
+	MyPortableID2  = 1
+	MyPortableFactoryID2 = 2
+)
+
+type MyPortable1 struct {
+	stringField string
+}
+
+func (m *MyPortable1) FactoryID() (factoryID int32) {
+	return MyPortableFactoryID1
+}
+
+func (m *MyPortable1) ClassID() (classID int32) {
+	return MyPortableID1
+}
+
+func (m *MyPortable1) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteUTF("stringField", m.stringField)
+	return
+}
+
+func (m *MyPortable1) ReadPortable(reader serialization.PortableReader) (err error) {
+	m.stringField = reader.ReadUTF("stringField")
+	return
+}
+
+func newMyPortable1() *MyPortable1 {
+	return &MyPortable1{}
+}
+
+func newMyPortableWithObj1(str string) *MyPortable1 {
+	return &MyPortable1{stringField:str}
+}
+
+
+type MyPortable2 struct {
+	intField int32
+}
+
+func (m *MyPortable2) FactoryID() (factoryID int32) {
+	return MyPortableFactoryID2
+}
+
+func (m *MyPortable2) ClassID() (classID int32) {
+	return MyPortableID2
+}
+
+func (m *MyPortable2) WritePortable(writer serialization.PortableWriter) (err error) {
+	writer.WriteInt32("intField", m.intField)
+	return
+}
+
+func (m *MyPortable2) ReadPortable(reader serialization.PortableReader) (err error) {
+	m.intField = reader.ReadInt32("intField")
+	return
+}
+
+func newMyPortable2() *MyPortable2 {
+	return &MyPortable2{}
+}
+
+func newMyPortableWithObj2(num int32) *MyPortable2 {
+	return &MyPortable2{intField:num}
+}
+
+type MyPortableFactory1 struct {
+}
+
+func NewMyPortableFactory1() *MyPortableFactory1 {
+	return &MyPortableFactory1{}
+}
+
+func (*MyPortableFactory1) Create(classID int32) serialization.Portable {
+
+	if classID == 1 {
+		return newMyPortable1()
+	}
+	return nil
+}
+
+type MyPortableFactory2 struct {
+}
+
+func NewMyPortableFactory2() *MyPortableFactory2 {
+	return &MyPortableFactory2{}
+}
+
+func (*MyPortableFactory2) Create(classID int32) serialization.Portable {
+
+	if classID == 1 {
+		return newMyPortable2()
+	}
+	return nil
+}
+
+func TestClassesWithSameClassIDInDifferentFactories(t *testing.T) {
+
+	config := serialization.NewConfig()
+	config.AddPortableFactory(MyPortableFactoryID1,NewMyPortableFactory1())
+	config.AddPortableFactory(MyPortableFactoryID2,NewMyPortableFactory2())
+
+	builder1 := classdef.NewClassDefinitionBuilder(MyPortableFactoryID1, MyPortableID1, 0)
+	builder1.AddUTFField("stringField")
+	cd1 := builder1.Build()
+
+	builder2 := classdef.NewClassDefinitionBuilder(MyPortableFactoryID2, MyPortableID2, 0)
+	builder2.AddInt32Field("intField")
+	cd2 := builder2.Build()
+
+	config.AddClassDefinition(cd1)
+	config.AddClassDefinition(cd2)
+
+	s, _ := NewService(config)
+
+	object := newMyPortableWithObj1("test")
+	data, _ := s.ToData(object)
+	ret, _ := s.ToObject(data)
+
+	if !reflect.DeepEqual(object, ret) {
+		t.Error("same classID and different factoryID failed")
+	}
+
+	object2 := newMyPortableWithObj2(1)
+	data2, _ := s.ToData(object2)
+	ret2 , _ := s.ToObject(data2)
+
+	if !reflect.DeepEqual(object2, ret2) {
+		t.Error("same classID and different factoryID failed")
+	}
+
+}
+
+func TestClassesWithSameClassIdAndSameFactoryId(t *testing.T) {
+	config := serialization.NewConfig()
+	config.AddPortableFactory(MyPortableFactoryID1,NewMyPortableFactory1())
+	config.AddPortableFactory(MyPortableFactoryID2,NewMyPortableFactory2())
+
+	builder1 := classdef.NewClassDefinitionBuilder(1, 1, 0)
+	builder1.AddUTFField("stringField")
+	cd1 := builder1.Build()
+
+	builder2 := classdef.NewClassDefinitionBuilder(1, 1, 0)
+	builder2.AddInt32Field("intField")
+	cd2 := builder2.Build()
+
+	config.AddClassDefinition(cd1)
+	config.AddClassDefinition(cd2)
+
+	s, _ := NewService(config)
+
+	object := newMyPortableWithObj1("test")
+	data, _ := s.ToData(object)
+	ret, _ := s.ToObject(data)
+
+	if !reflect.DeepEqual(object, ret) {
+		t.Error("same classID and same factoryID failed")
+	}
+
+	object2 := newMyPortableWithObj2(1)
+	data2, _ := s.ToData(object2)
+	ret2, _ := s.ToObject(data2)
+
+	if !reflect.DeepEqual(object2, ret2) {
+		t.Error("same classID and same factoryID failed")
+	}
 }

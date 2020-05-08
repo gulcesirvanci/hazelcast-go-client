@@ -484,6 +484,9 @@ type ClassDefinition interface {
 	// Field returns field definition of field by given name.
 	Field(name string) FieldDefinition
 
+	// FieldNames returns []string of fields in struct.
+	FieldNames() []string
+
 	// FieldCount returns the number of fields in struct.
 	FieldCount() int
 }
