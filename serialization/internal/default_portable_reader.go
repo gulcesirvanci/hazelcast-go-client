@@ -479,7 +479,7 @@ func (pr *DefaultPortableReader) readPortableArray(fieldName string) ([]serializ
 	return portables, nil
 }
 
-func (pr *DefaultPortableReader) ReadRawDataInput() serialization.DataInput {
+func (pr *DefaultPortableReader) ReadRawData() serialization.DataInput {
 	index := int32(pr.classDefinition.FieldCount())
 	pos, _ := pr.input.(*ObjectDataInput).readInt32WithPosition(pr.offset + (index * bufutil.Int32SizeInBytes))
 	pr.input.SetPosition(pos)

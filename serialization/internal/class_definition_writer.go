@@ -142,7 +142,7 @@ func (cdw *ClassDefinitionWriter) WritePortableArray(fieldName string, portables
 	return nil
 }
 
-func (cdw *ClassDefinitionWriter) WriteRawDataOutput() serialization.PositionalDataOutput {
+func (cdw *ClassDefinitionWriter) WriteRawData() serialization.PositionalDataOutput {
 	var empty serialization.PositionalDataOutput
 	return empty
 }
