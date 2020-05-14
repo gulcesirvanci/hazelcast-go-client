@@ -222,7 +222,7 @@ func (s *Service) registerSerializer(serializer serialization.Serializer) error 
 }
 
 func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
-	classDefinitions []serialization.ClassDefinition) {
+	classDefinitions []serialization.ClassDefinition) error {
 
 	var factoryMap = make(map[int32]map[int32]serialization.ClassDefinition)
 
@@ -241,12 +241,16 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 	}
 
 	for _, cd := range classDefinitions {
-		s.registerClassDefinition(portableSerializer,cd,factoryMap)
+		err := s.registerClassDefinition(portableSerializer,cd,factoryMap)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (s *Service) registerClassDefinition(portableSerializer *PortableSerializer,
-	cd serialization.ClassDefinition,factoryMap map[int32]map[int32]serialization.ClassDefinition){
+	cd serialization.ClassDefinition,factoryMap map[int32]map[int32]serialization.ClassDefinition) error{
 
 	fieldNames := cd.FieldNames()
 
@@ -265,9 +269,13 @@ func (s *Service) registerClassDefinition(portableSerializer *PortableSerializer
 					continue
 				}
 			}
+			return core.NewHazelcastSerializationError(fmt.Sprintf("Could not find registered ClassDefinition " +
+				"for factory-id : %d , class-id : %d " , factoryID , classID),nil)
+
 		}
 	}
 	portableSerializer.portableContext.RegisterClassDefinition(cd)
+	return nil
 }
 
 func (s *Service) registerGlobalSerializer(globalSerializer serialization.Serializer) {
