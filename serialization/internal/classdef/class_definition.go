@@ -43,6 +43,15 @@ func (cd *ClassDefinitionImpl) Field(name string) serialization.FieldDefinition 
 	return cd.fields[name]
 }
 
+func (cd *ClassDefinitionImpl) FieldNames() []string {
+	var names []string
+
+	for k :=range cd.fields{
+		names = append(names, k)
+	}
+	return names
+}
+
 func (cd *ClassDefinitionImpl) FieldCount() int {
 	return len(cd.fields)
 }

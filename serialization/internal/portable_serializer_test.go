@@ -715,3 +715,47 @@ func TestRawDataInvalidRead(t *testing.T){
 
 }
 
+func TestClassDefinitionConfig(t *testing.T){
+	var portableVersion int32 = 1
+
+	sc := serialization.NewConfig()
+	sc.AddPortableFactory(1,&portableFactoryRawData{})
+	sc.SetPortableVersion(portableVersion)
+
+	builder1 := classdef.NewClassDefinitionBuilder(1, 4, portableVersion)
+	builder1.AddInt64Field("l")
+	builder1.AddInt16ArrayField("c")
+
+	createNamedPortableClassDefinition := classdef.NewClassDefinitionBuilder(1,6,portableVersion)
+	createNamedPortableClassDefinition.AddUTFField("name")
+	createNamedPortableClassDefinition.AddInt32Field("myint")
+	cd3 := createNamedPortableClassDefinition.Build()
+
+	builder1.AddPortableField("p", cd3)
+
+	cd1 := builder1.Build()
+
+	builder2 := classdef.NewClassDefinitionBuilder(1, 6, portableVersion)
+	builder2.AddUTFField("name")
+	builder2.AddInt32Field("myint")
+	cd2 := builder2.Build()
+	sc.AddClassDefinition(cd2)
+	sc.AddClassDefinition(cd1)
+
+	ss, _ := NewService(sc)
+
+	p := NewNamedPortable("named portable",34567)
+	c := []int16{'t','e','s','t',' ','c','h','a','r','s'}
+	sds := []byte{116, 101, 115, 116, 32, 98, 121, 116, 101, 115}
+	l := time.Now().UnixNano() / int64(time.Millisecond)
+	rawP := NewRawDataPortable( l, c, p,9876, "Testing raw portable", sds)
+
+	data, _ := ss.ToData(rawP)
+	ret, _ := ss.ToObject(data)
+
+	if !reflect.DeepEqual(rawP, ret) {
+		t.Error("wrong alert")
+	}
+
+}
+
