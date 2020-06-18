@@ -549,15 +549,10 @@ func TestClassDefinitionConfig(t *testing.T){
 	createNamedPortableClassDefinition.AddInt32Field("myint")
 	cd3 := createNamedPortableClassDefinition.Build()
 
-	builder1.AddPortableField("p", cd3)
+	builder1.AddPortableFieldNested("p", cd3)
 
 	cd1 := builder1.Build()
 
-	builder2 := classdef.NewClassDefinitionBuilder(1, 6, portableVersion)
-	builder2.AddUTFField("name")
-	builder2.AddInt32Field("myint")
-	cd2 := builder2.Build()
-	sc.AddClassDefinition(cd2)
 	sc.AddClassDefinition(cd1)
 
 	ss, _ := NewService(sc)

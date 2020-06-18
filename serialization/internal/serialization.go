@@ -238,6 +238,32 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 		}else {
 			factoryMap[factoryID][classID] = cd
 		}
+
+		for _, name := range cd.FieldNames() {
+			fd := cd.Field(name)
+			if fd.Type() == classdef.TypePortable || fd.Type() == classdef.TypePortableArray {
+
+				portableClass := classdef.NewClassDefinitionImpl(fd.FactoryID(), fd.ClassID(), fd.Version())
+				var index int32 = 0
+
+				for _, temp := range cd.FieldNames() {
+						fdTemp := cd.Field(temp)
+
+					if fd.ClassID() == fdTemp.ClassID() && fdTemp.Type() != classdef.TypePortable && fdTemp.Type() != classdef.TypePortableArray{
+						portableClass.AddFieldDefinition(classdef.NewFieldDefinitionImpl(index, temp, fdTemp.Type(), fdTemp.FactoryID(), fdTemp.ClassID(), fdTemp.Version()))
+						index++
+					}
+
+				}
+
+				classDefinitions = append(classDefinitions, portableClass)
+				inner = make(map[int32]serialization.ClassDefinition)
+				inner[fd.ClassID()] = portableClass
+				factoryMap[fd.FactoryID()] = inner
+			}
+
+		}
+
 	}
 
 	for _, cd := range classDefinitions {
