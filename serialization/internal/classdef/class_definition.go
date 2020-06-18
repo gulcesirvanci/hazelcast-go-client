@@ -62,6 +62,10 @@ func (cd *ClassDefinitionImpl) AddFieldDefinition(definition serialization.Field
 	cd.fields[definition.Name()] = definition
 }
 
+func (cd *ClassDefinitionImpl) RemoveFieldDef(definition serialization.FieldDefinition) {
+	delete(cd.fields,definition.Name())
+}
+
 type FieldDefinitionImpl struct {
 	index     int32
 	fieldName string

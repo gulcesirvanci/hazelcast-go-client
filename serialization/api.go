@@ -493,6 +493,8 @@ type ClassDefinition interface {
 
 	// FieldCount returns the number of fields in struct.
 	FieldCount() int
+
+	RemoveFieldDef(fd FieldDefinition)
 }
 
 // FieldDefinition defines name, type, index of a field.

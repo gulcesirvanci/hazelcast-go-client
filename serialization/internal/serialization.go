@@ -230,38 +230,46 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 		factoryID := cd.FactoryID()
 		classID := cd.ClassID()
 
-		inner, ok := factoryMap[factoryID]
+		var innerMap, ok = factoryMap[factoryID]
+
 		if !ok {
-			inner = make(map[int32]serialization.ClassDefinition)
-			inner[classID] = cd
-			factoryMap[factoryID] = inner
+			innerMap = make(map[int32]serialization.ClassDefinition)
+			innerMap[classID] = cd
+			factoryMap[factoryID] = innerMap
 		}else {
 			factoryMap[factoryID][classID] = cd
 		}
+
+		var delNames []string
 
 		for _, name := range cd.FieldNames() {
 			fd := cd.Field(name)
 			if fd.Type() == classdef.TypePortable || fd.Type() == classdef.TypePortableArray {
 
 				portableClass := classdef.NewClassDefinitionImpl(fd.FactoryID(), fd.ClassID(), fd.Version())
-				var index int32 = 0
+				var index int32
 
 				for _, temp := range cd.FieldNames() {
 						fdTemp := cd.Field(temp)
 
 					if fd.ClassID() == fdTemp.ClassID() && fdTemp.Type() != classdef.TypePortable && fdTemp.Type() != classdef.TypePortableArray{
-						portableClass.AddFieldDefinition(classdef.NewFieldDefinitionImpl(index, temp, fdTemp.Type(), fdTemp.FactoryID(), fdTemp.ClassID(), fdTemp.Version()))
+						portableClass.AddFieldDefinition(classdef.NewFieldDefinitionImpl(index, temp, fdTemp.Type(),
+							fdTemp.FactoryID(), fdTemp.ClassID(), fdTemp.Version()))
 						index++
+						delNames = append(delNames, temp)
 					}
 
 				}
 
 				classDefinitions = append(classDefinitions, portableClass)
-				inner = make(map[int32]serialization.ClassDefinition)
-				inner[fd.ClassID()] = portableClass
-				factoryMap[fd.FactoryID()] = inner
+				innerMap = make(map[int32]serialization.ClassDefinition)
+				innerMap[fd.ClassID()] = portableClass
+				factoryMap[fd.FactoryID()] = innerMap
 			}
 
+		}
+		for i:=0; i < len(delNames) ; i++ {
+			cd.RemoveFieldDef(cd.Field(delNames[i]))
 		}
 
 	}
