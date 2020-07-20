@@ -221,7 +221,7 @@ func (s *Service) registerSerializer(serializer serialization.Serializer) error 
 	return nil
 }
 
-func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
+func (s *Service) registerClassDefinitionss(portableSerializer *PortableSerializer,
 	classDefinitions []serialization.ClassDefinition) error {
 
 	var factoryMap = make(map[int32]map[int32]serialization.ClassDefinition)
@@ -275,7 +275,18 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 	}
 
 	for _, cd := range classDefinitions {
-		err := s.registerClassDefinition(portableSerializer,cd,factoryMap)
+		err := s.registerClassDefinition(portableSerializer,cd)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) registerClassDefinitions(portableSerializer *PortableSerializer,
+	classDefinitions []serialization.ClassDefinition) error {
+	for _, cd := range classDefinitions {
+		err := s.registerClassDefinition(portableSerializer,cd)
 		if err != nil {
 			return err
 		}
@@ -284,28 +295,23 @@ func (s *Service) registerClassDefinitions(portableSerializer *PortableSerialize
 }
 
 func (s *Service) registerClassDefinition(portableSerializer *PortableSerializer,
-	cd serialization.ClassDefinition,factoryMap map[int32]map[int32]serialization.ClassDefinition) error{
+	cd serialization.ClassDefinition) error{
 
 	fieldNames := cd.FieldNames()
 
 	for _, fieldName := range fieldNames {
 		fieldDef := cd.Field(fieldName)
+		factoryID := fieldDef.FactoryID()
+		classID := fieldDef.ClassID()
 		if fieldDef.Type() == classdef.TypePortable || fieldDef.Type() == classdef.TypePortableArray {
-			factoryID := fieldDef.FactoryID()
-			classID := fieldDef.ClassID()
-
-			classDefMap := factoryMap[factoryID]
-			if classDefMap != nil {
-				nestedCD := classDefMap[classID]
+			nestedCD := fieldDef.ClassDefinition()
 				if nestedCD != nil {
-					s.registerClassDefinition(portableSerializer,nestedCD,factoryMap)
+					s.registerClassDefinition(portableSerializer,nestedCD)
 					portableSerializer.portableContext.RegisterClassDefinition(nestedCD)
 					continue
 				}
-			}
 			return core.NewHazelcastSerializationError(fmt.Sprintf("Could not find registered ClassDefinition " +
 				"for factory-id : %d , class-id : %d " , factoryID , classID),nil)
-
 		}
 	}
 	portableSerializer.portableContext.RegisterClassDefinition(cd)

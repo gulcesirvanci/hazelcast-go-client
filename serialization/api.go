@@ -516,4 +516,6 @@ type FieldDefinition interface {
 
 	// Version returns version of this field's struct.
 	Version() int32
+
+	ClassDefinition() ClassDefinition
 }

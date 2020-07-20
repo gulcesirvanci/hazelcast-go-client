@@ -144,35 +144,9 @@ func (cdb *ClassDefinitionBuilder) AddPortableField(fieldName string, def serial
 		return core.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
-	cdb.fieldDefinitions[fieldName] = classdef.NewFieldDefinitionImpl(cdb.index, fieldName, classdef.TypePortable,
-		def.FactoryID(), def.ClassID(), cdb.version)
+	cdb.fieldDefinitions[fieldName] = classdef.NewFieldDefinition(cdb.index, fieldName, classdef.TypePortable,
+		def.FactoryID(), def.ClassID(), cdb.version, def)
 	cdb.index++
-	return nil
-}
-
-// AddPortableField adds Portable field to class definition.
-func (cdb *ClassDefinitionBuilder) AddPortableFieldNested(fieldName string, def serialization.ClassDefinition) error {
-	err := cdb.check()
-	if err != nil {
-		return err
-	}
-	if def.ClassID() == 0 {
-		return core.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
-	}
-
-	cdb.fieldDefinitions[fieldName] = classdef.NewFieldDefinitionImpl(cdb.index, fieldName, classdef.TypePortable,
-		def.FactoryID(), def.ClassID(), cdb.version)
-	cdb.index++
-
-	if def.ClassID() != cdb.classID {
-
-		for _, name := range def.FieldNames() {
-			fd := def.Field(name)
-			cdb.fieldDefinitions[name] = classdef.NewFieldDefinitionImpl(cdb.index, name, fd.Type() ,
-				def.FactoryID(), def.ClassID(), cdb.version)
-			cdb.index++
-		}
-	}
 	return nil
 }
 
@@ -294,8 +268,8 @@ func (cdb *ClassDefinitionBuilder) AddPortableArrayField(fieldName string, def s
 		return core.NewHazelcastIllegalArgumentError("Portable class id cannot be zero", nil)
 	}
 
-	cdb.fieldDefinitions[fieldName] = classdef.NewFieldDefinitionImpl(cdb.index, fieldName, classdef.TypePortableArray,
-		def.FactoryID(), def.ClassID(), cdb.version)
+	cdb.fieldDefinitions[fieldName] = classdef.NewFieldDefinition(cdb.index, fieldName, classdef.TypePortableArray,
+		def.FactoryID(), def.ClassID(), cdb.version, def)
 	cdb.index++
 	return nil
 }

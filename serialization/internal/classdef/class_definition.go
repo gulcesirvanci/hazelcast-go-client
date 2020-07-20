@@ -73,11 +73,17 @@ type FieldDefinitionImpl struct {
 	factoryID int32
 	classID   int32
 	version   int32
+	classDefinition serialization.ClassDefinition
 }
 
 func NewFieldDefinitionImpl(index int32, fieldName string, fieldType int32, factoryID int32,
 	classID int32, version int32) serialization.FieldDefinition {
-	return &FieldDefinitionImpl{index, fieldName, fieldType, factoryID, classID, version}
+	return &FieldDefinitionImpl{index, fieldName, fieldType, factoryID, classID, version, nil}
+}
+
+func NewFieldDefinition(index int32, fieldName string, fieldType int32, factoryID int32,
+	classID int32, version int32, classDef serialization.ClassDefinition) serialization.FieldDefinition {
+	return &FieldDefinitionImpl{index, fieldName, fieldType, factoryID, classID, version, classDef}
 }
 
 func (fd *FieldDefinitionImpl) Type() int32 {
@@ -104,6 +110,9 @@ func (fd *FieldDefinitionImpl) Version() int32 {
 	return fd.version
 }
 
+func (fd *FieldDefinitionImpl) ClassDefinition() serialization.ClassDefinition {
+	return fd.classDefinition
+}
 const (
 	TypePortable = iota
 	TypeByte

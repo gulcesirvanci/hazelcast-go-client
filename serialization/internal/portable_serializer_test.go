@@ -549,7 +549,7 @@ func TestClassDefinitionConfig(t *testing.T){
 	createNamedPortableClassDefinition.AddInt32Field("myint")
 	cd3 := createNamedPortableClassDefinition.Build()
 
-	builder1.AddPortableFieldNested("p", cd3)
+	builder1.AddPortableField("p", cd3)
 
 	cd1 := builder1.Build()
 
