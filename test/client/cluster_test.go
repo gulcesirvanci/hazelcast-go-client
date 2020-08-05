@@ -16,6 +16,7 @@ package client
 
 import (
 	"log"
+	"math"
 	"sync"
 	"testing"
 
@@ -361,4 +362,133 @@ type mapListener struct {
 
 func (l *mapListener) EntryAdded(event core.EntryEvent) {
 	l.wg.Done()
+}
+
+func TestSingleMemberRestarjjt(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	cluster, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	oldMember, _ := remoteController.StartMember(cluster.ID)
+
+	newCfg := hazelcast.NewConfig()
+	newCfg.NetworkConfig().SetConnectionTimeout(math.MaxInt64)
+	client, _ := hazelcast.NewClientWithConfig(newCfg)
+
+	client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
+
+	wg.Add(2) // 1 for initial members, 1 for leaving member
+	newMember, _ := remoteController.StartMember(cluster.ID)
+
+	member := client.Cluster().GetMembers()
+	assert.Equalf(t, newMember.UUID , member[len(member) - 1].UUID(), "added")
+
+	//removed, _ := remoteController.ShutdownMember(cluster.ID, oldMember.UUID) //leaving
+	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
+
+	member = client.Cluster().GetMembers()
+	for i:= 0 ; i < len(member) ; i++ {
+		assert.NotEqualf(t, oldMember.UUID , member[i].UUID(), "removed")
+	}
+
+	memberList := client.Cluster().GetMembers()
+	assert.Equalf(t, len(memberList), 1, "client did not use the last member list to reconnect")
+	assert.Equalf(t, memberList[0].UUID(), newMember.UUID, "client did not use the last member list to reconnect uuid")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestSingMemberRestart(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	cluster, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	oldMember, _ := remoteController.StartMember(cluster.ID)
+	config := hazelcast.NewConfig()
+	config.NetworkConfig().SetConnectionAttemptLimit(100)
+	config.NetworkConfig().SetSmartRouting(false)
+	config.AddMembershipListener(&membershipListener{wg: wg})
+	wg.Add(3) // 2 for initial members, 1 for leaving member
+	client, _ := hazelcast.NewClientWithConfig(config)
+	newMember, _ := remoteController.StartMember(cluster.ID)
+	remoteController.ShutdownMember(cluster.ID, oldMember.UUID)
+	timeout := testutil.WaitTimeout(wg, testutil.Timeout)
+	assert.False(t, timeout)
+	memberList := client.Cluster().GetMembers()
+	assert.Equalf(t, len(memberList), 1, "client did not use the last member list to reconnect")
+	assert.Equalf(t, memberList[0].UUID(), newMember.UUID, "client did not use the last member list to reconnect uuid")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestMultiMemberRestart(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	instance, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	//instance2 , _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
+
+	newCfg := hazelcast.NewConfig()
+	newCfg.NetworkConfig().SetConnectionTimeout(math.MaxInt64)
+	client, _ := hazelcast.NewClientWithConfig(newCfg)
+
+	oldMember, _ := remoteController.StartMember(instance.ID)
+	//oldMember2, _ := remoteController.StartMember(instance2.ID)
+
+	//var added []list.List
+	//var removed []list.List
+
+	client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
+
+	wg.Add(2) // 1 for initial members, 1 for leaving member
+
+	cluster := instance
+
+	testutil.AssertTrueEventually(t, func() bool {
+		locked, err := remoteController.ShutdownCluster(cluster.ID)
+		return err == nil && !locked
+	})
+
+	remoteController.ShutdownCluster(instance.ID)
+	instance, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	newMember, _ := remoteController.StartMember(instance.ID)
+
+	members := client.Cluster().GetMembers()
+	assert.Equalf(t, newMember.UUID , members[len(members) - 1].UUID(), "added")
+
+	members = client.Cluster().GetMembers()
+	for i:= 0 ; i < len(members) ; i++ {
+		assert.NotEqualf(t, oldMember.UUID , members[i].UUID(), "removed")
+	}
+
+	memberList := client.Cluster().GetMembers()
+	assert.Equalf(t, len(memberList), 1, "client did not use the last member list to reconnect")
+	assert.Equalf(t, memberList[0].UUID(), newMember.UUID, "client did not use the last member list to reconnect uuid")
+	client.Shutdown()
+	//remoteController.ShutdownCluster(cluster.ID)
+}
+
+func TestSingleMemberRestart(t *testing.T) {
+	var wg = new(sync.WaitGroup)
+	instance, _ := remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	oldMember, _ := remoteController.StartMember(instance.ID)
+
+	newCfg := hazelcast.NewConfig()
+	newCfg.NetworkConfig().SetConnectionTimeout(math.MaxInt64)
+	client, _ := hazelcast.NewClientWithConfig(newCfg)
+
+	client.Cluster().AddMembershipListener(&membershipListener{wg: wg})
+
+	wg.Add(2) // 1 for initial members, 1 for leaving member
+	remoteController.ShutdownCluster(instance.ID)
+	instance, _ = remoteController.CreateCluster("", testutil.DefaultServerConfig)
+	newMember, _ := remoteController.StartMember(instance.ID)
+
+	members := client.Cluster().GetMembers()
+	assert.Equalf(t, newMember.UUID , members[len(members) - 1].UUID(), "added")
+
+	members = client.Cluster().GetMembers()
+	for i:= 0 ; i < len(members) ; i++ {
+		assert.NotEqualf(t, oldMember.UUID , members[i].UUID(), "removed")
+	}
+
+	memberList := client.Cluster().GetMembers()
+	assert.Equalf(t, len(memberList), 1, "client did not use the last member list to reconnect")
+	assert.Equalf(t, memberList[0].UUID(), newMember.UUID, "client did not use the last member list to reconnect uuid")
+	client.Shutdown()
+	remoteController.ShutdownCluster(cluster.ID)
 }
