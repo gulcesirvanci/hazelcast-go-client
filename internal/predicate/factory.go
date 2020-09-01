@@ -59,6 +59,8 @@ func (pf *Factory) Create(id int32) serialization.IdentifiedDataSerializable {
 		return &False{}
 	case trueID:
 		return &True{}
+	case pagingID:
+		return &Paging{}
 	default:
 		return nil
 	}

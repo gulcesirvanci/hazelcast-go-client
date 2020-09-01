@@ -568,3 +568,11 @@ func (m *TopicMessage) PublishTime() time.Time {
 func (m *TopicMessage) PublishingMember() core.Member {
 	return m.publishingMember
 }
+type PagingComparator struct {
+	comparator core.Comparator
+}
+
+func (c *PagingComparator) Compare(entry1 map[int32]map[interface{}]interface{}, entry2 map[int32]map[interface{}]interface{}) int {
+	fmt.Print("Not implemented yet")
+	return -99 //warning not implemented yet
+}

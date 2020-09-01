@@ -15,7 +15,10 @@
 package predicate
 
 import (
+	"fmt"
+	"github.com/hazelcast/hazelcast-go-client/core"
 	"github.com/hazelcast/hazelcast-go-client/serialization"
+	"reflect"
 )
 
 type predicate struct {
@@ -389,4 +392,149 @@ func (tp *True) ReadData(input serialization.DataInput) error {
 func (tp *True) WriteData(output serialization.DataOutput) error {
 	//Empty method
 	return nil
+}
+
+
+type Paging struct {
+	*predicate
+	comparator core.Comparator
+	anchorList map[int32]map[interface{}]interface{}
+	pageSize int32
+	page int32
+	iterationType byte
+}
+
+ var nilAnchor = map[interface{}]interface{} {
+ 	-1 : nil,
+}
+
+func PagingPredicate(predicate *predicate, pageSize int32, comparator core.Comparator) *Paging {
+	if IsInstanceOf(predicate, Paging{}) == true {
+		core.NewHazelcastIllegalArgumentError("Nested PagingPredicate is not supported!", nil)
+	}
+	if pageSize <= 0 {
+		core.NewHazelcastIllegalArgumentError("pageSize should be greater than 0!", nil)
+	}
+	iterationType := byte(2) //entry
+	comparator=nil
+	var anchorList map[int32]map[interface{}]interface{} // List of pairs: (nearest page, (anchor key, anchor value))
+	return &Paging{newPredicate(pageSize),comparator, anchorList, pageSize, 0, iterationType}
+}
+
+func NewPagingPredicate(predicate *predicate, pageSize int32) *Paging {
+	return PagingPredicate(predicate, pageSize, nil)
+}
+
+func IsInstanceOf(objectPtr, typePtr interface{}) bool {
+	return reflect.TypeOf(objectPtr) == reflect.TypeOf(typePtr)
+}
+
+ //repr 
+ 
+func IterationTypeName(iterationType byte) string {
+	switch iterationType {
+	case byte(0):
+		return "KEY"
+	case byte(1):
+		return "VALUE"
+	case byte(2):
+		return "ENTRY"
+	default:
+		return ""
+	}
+}
+
+func (paging *Paging) WriteData(output serialization.DataOutput) error {
+	output.WriteObject(paging.predicate)
+	output.WriteObject(paging.comparator)
+	output.WriteInt32(paging.page)
+	output.WriteInt32(paging.pageSize)
+	output.WriteUTF(IterationTypeName(paging.iterationType))
+	output.WriteInt32(int32(len(paging.anchorList)))
+	for nearestPage := range paging.anchorList {
+		output.WriteInt32(nearestPage)
+		for anchorK, anchorV := range paging.anchorList[nearestPage] {
+			output.WriteObject(anchorK)
+			output.WriteObject(anchorV)
+		}
+	}
+	return nil
+}
+
+func (paging *Paging) NextPage() {
+	paging.page++
+}
+
+func (paging *Paging) PreviousPage() {
+	if paging.page != 0 {
+		paging.page--
+	}
+}
+
+func (paging *Paging) SetPage(newPage int32) {
+	if paging.page < 0 {
+		core.NewHazelcastIllegalArgumentError("New page should be positive or 0.", nil)
+	}
+	paging.page = newPage
+}
+
+func (paging *Paging) SetIterationType(newIterType byte) {
+	paging.iterationType = newIterType
+}
+
+func (paging *Paging) SetAnchor(page int32, anchor map[interface{}]interface{}) {
+	var anchorEntry map[int32]map[interface{}]interface{}
+		anchorEntry[page] = anchor
+
+	anchorCount := int32(len(paging.anchorList))
+
+	if page < anchorCount {
+		paging.anchorList[page] = anchor
+	} else if page == anchorCount {
+		paging.anchorList[page+1] = anchor
+	} else {
+		core.NewHazelcastIllegalArgumentError(fmt.Sprintf("Anchor index is not correct, expected: %d, found: %d", page, anchorCount), nil)
+	}
+}
+
+func (paging *Paging) Reset() {
+	paging.iterationType = byte(2)
+	for k := range paging.anchorList {
+		delete(paging.anchorList, k)
+	}
+	paging.page = 0
+}
+
+func (paging *Paging) Page() int32 {
+	return paging.page
+}
+
+func (paging *Paging) PageSize() int32 {
+	return paging.pageSize
+}
+
+func (paging *Paging) NearestAnchorEntry() map[interface{}]interface{} {
+	anchorCount := int32(len(paging.anchorList))
+	if paging.page == 0 || anchorCount == 0 {
+		return nilAnchor
+	}
+	var anchoredEntry map[interface{}]interface{}
+	if paging.page < anchorCount {
+		anchoredEntry = paging.anchorList[paging.page - 1]
+	} else {
+		anchoredEntry = paging.anchorList[anchorCount - 1]
+	}
+	return anchoredEntry
+}
+
+func (paging *Paging) IterationType() byte {
+	return paging.iterationType
+}
+
+func (paging *Paging) Comparator() core.Comparator {
+	return paging.comparator
+}
+
+func (paging *Paging) Predicate() *predicate {
+	return paging.predicate
 }

@@ -455,3 +455,8 @@ type ReliableMessageListener interface {
 	// MessageListener.OnMessage().
 	IsTerminal(err error) (bool, error)
 }
+
+type Comparator interface {
+
+	Compare(entry1 map[int32]map[interface{}]interface{}, entry2 map[int32]map[interface{}]interface{}) int
+}
