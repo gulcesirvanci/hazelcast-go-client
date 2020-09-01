@@ -408,7 +408,7 @@ type Paging struct {
  	-1 : nil,
 }
 
-func PagingPredicate(predicate *predicate, pageSize int32, comparator core.Comparator) *Paging {
+func PagingPredicate(predicate interface{}, pageSize int32, comparator core.Comparator) *Paging {
 	if IsInstanceOf(predicate, Paging{}) == true {
 		core.NewHazelcastIllegalArgumentError("Nested PagingPredicate is not supported!", nil)
 	}
@@ -421,7 +421,7 @@ func PagingPredicate(predicate *predicate, pageSize int32, comparator core.Compa
 	return &Paging{newPredicate(pageSize),comparator, anchorList, pageSize, 0, iterationType}
 }
 
-func NewPagingPredicate(predicate *predicate, pageSize int32) *Paging {
+func NewPagingPredicate(predicate interface{}, pageSize int32) *Paging {
 	return PagingPredicate(predicate, pageSize, nil)
 }
 

@@ -460,4 +460,6 @@ type Map interface {
 	// This struct must have a serializable EntryProcessor counter part registered on server side with the actual
 	// org.hazelcast.map.EntryProcessor implementation.
 	ExecuteOnEntriesWithPredicate(entryProcessor interface{}, predicate interface{}) (keyToResultPairs []Pair, err error)
+
+	//PagingPredicate(predicate interface{}) (resultPairs []Pair, err error)
 }

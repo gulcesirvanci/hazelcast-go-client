@@ -112,3 +112,13 @@ func True() interface{} {
 func False() interface{} {
 	return predicate.NewFalse()
 }
+
+// False returns a PagingPredicate.
+func PagingPredicate(pr interface{}, pageSize int32) *predicate.Paging {
+	return predicate.NewPagingPredicate(pr,pageSize)
+}
+
+// False returns a PagingPredicate.
+func PagingPredicatePage(pageSize int32) *predicate.Paging {
+	return predicate.NewPagingPredicate(nil, pageSize)
+}

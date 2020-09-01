@@ -429,6 +429,18 @@ func (mp *mapProxy) EntrySetWithPredicate(predicate interface{}) (resultPairs []
 	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapEntriesWithPredicateDecodeResponse)
 }
 
+/*
+func (mp *mapProxy) EntrySetWithPagingPredicate(predicate interface{}) (resultPairs []core.Pair, err error) {
+	predicateData, err := mp.validateAndSerializePredicate(predicate)
+	if err != nil {
+		return nil, err
+	}
+	request := proto.MapEntriesWithPredicateEncodeRequest(mp.name, predicateData)
+	responseMessage, err := mp.invokeOnRandomTarget(request)
+	return mp.decodeToPairSliceAndError(responseMessage, err, proto.MapEntriesWithPredicateDecodeResponse)
+}
+ */
+
 func (mp *mapProxy) GetAll(keys []interface{}) (entryMap map[interface{}]interface{}, err error) {
 	if keys == nil {
 		return nil, core.NewHazelcastNilPointerError(bufutil.NilKeysAreNotAllowed, nil)
